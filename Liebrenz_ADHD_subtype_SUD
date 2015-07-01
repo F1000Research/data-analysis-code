@@ -1,0 +1,81 @@
+/// Code for reproducing analysis reported in Liebrenz et al 
+
+
+// Switch first to directory containing the dataset, then...
+use Liebrenz_ADHD_subtypes_SUD
+
+*------------------------------------------------------------------------------*
+// Power analysis
+
+/* 	Computes as 'p2' minimal detectable difference in proportion between two groups 
+	when the first group's proportion of the target outcome (e.g. proportion of 
+	some substance use) is 0.1 
+*/
+
+// Inattentive vs. hyperactive-impulsive
+power twoproportions .1, test(chi2) power(0.8) n1(70) n2(24) direction(upper) //power for deviation upwards from 0.1
+// inattentive vs. combined
+power twoproportions .1, test(chi2) power(0.8) n1(70) n2(233) direction(upper) //power for deviation upwards from 0.1
+
+
+/* Power for delta=.1 (10%) */
+
+// inattentive vs. hyperactive-impulsive
+power twoproportions .1 .2, test(chi2) n1(70) n2(24)
+// inattentive vs. combined
+power twoproportions .1 .2, test(chi2) n1(70) n2(233)
+
+/* Power for delta=.2 (20%) */
+// inattentive vs. hyperactive-impulsive
+power twoproportions .1 .3, test(chi2) n1(70) n2(24)
+// inattentive vs. combined
+power twoproportions .1 .3, test(chi2) n1(70) n2(233)
+
+
+*------------------------------------------------------------------------------*
+// Compare cases excluded vs included from analysis
+tabstat age, by(adhdnotest) s(mean sd)
+kwallis age, by(adhdnotest)
+ta fem adhdnotest, col chi2 nokey exact
+foreach v of varlist df3x df4x subnotob subs_subnotob {
+	ta `v' adhdnotest, col chi2 nokey exact
+}
+
+
+*------------------------------------------------------------------------------*
+// drop cases excluded from analysis
+drop if adhdnotest == 1
+
+*------------------------------------------------------------------------------*
+// Distribution subtypes
+ta subtype
+
+
+*------------------------------------------------------------------------------*
+// Distribution of questionnaire responses, overall and by subtype
+sum sumcwursk sumcadhssb scladhd
+tabstat sumcwursk sumcadhssb scladhd, by(subtype) s(mean sd n)
+foreach v of varlist sumcwursk sumcadhssb scladhd {
+	kwallis `v' if subtype!=2, by(subtype) // inatt vs combined
+	kwallis `v' if subtype!=3, by(subtype) // inatt vs hyper-imp
+}
+
+
+*------------------------------------------------------------------------------*
+// Distribution of age, gender and comorbidities and substance abuse
+sum age
+ta fem
+tab1 df?x
+tab1 subnotob subs_subnotob
+tab1 alc op can sed coc stim hall tob
+
+*------------------------------------------------------------------------------*
+// Distribution of substance abuse/dependence and psychiatric comorbidity by subtype
+ta anyf2_8 subtype, col chi2 nokey exact
+
+foreach v of varlist alc op can coc stim tob subnotob subs_subnotob {
+	ta `v' subtype if subtype!=2, col chi2 nokey exact // inatt vs combined
+	ta `v' subtype if subtype!=3, col chi2 nokey exact // inatt vs hyper-imp
+}
+
+
